@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 
 const LAW_LINKS: Record<string, { url: string; summary: string }> = {
   "EU AI Act": {
@@ -120,6 +121,13 @@ const QUESTIONS = [
   },
 ];
 
+const LOADING_MESSAGES = [
+  "Mapping your jurisdictional exposure...",
+  "Identifying applicable frameworks...",
+  "Assessing governance maturity...",
+  "Calculating your risk profile...",
+];
+
 interface Framework {
   name: string;
   relevance: string;
@@ -131,13 +139,18 @@ interface PriorityItem {
   description: string;
 }
 
+interface JurisEntry {
+  jurisdiction: string;
+  note: string;
+}
+
 interface Result {
   riskTier: string;
   summary: string;
   primaryFrameworks: Framework[];
   topPriorities: PriorityItem[];
   immediateActions: PriorityItem[];
-  jurisdictionalNote: string;
+  jurisdictionalNote: JurisEntry[] | string;
 }
 
 const riskConfig: Record<string, { color: string; bg: string; border: string }> = {
@@ -154,8 +167,57 @@ export default function CompassApp() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["overview"]));
+  const [loadingMsg, setLoadingMsg] = useState(0);
 
   const currentQuestion = QUESTIONS[currentQ];
+
+  useEffect(() => {
+    if (step !== "loading") return;
+    setLoadingMsg(0);
+    const interval = setInterval(() => {
+      setLoadingMsg((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  function toggleSection(id: string) {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function renderAccordion(id: string, label: string, children: ReactNode) {
+    const isOpen = openSections.has(id);
+    return (
+      <div className="accordion-row" key={id}>
+        <button className="accordion-header" onClick={() => toggleSection(id)}>
+          <span className="accordion-label">{label}</span>
+          <svg
+            className={`accordion-chevron${isOpen ? " open" : ""}`}
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M4 6l4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <div className={`accordion-body${isOpen ? " open" : ""}`}>
+          <div className="accordion-body-inner">{children}</div>
+        </div>
+      </div>
+    );
+  }
 
   function handleSelect(qId: string, value: string, isMulti: boolean) {
     if (isMulti) {
@@ -216,6 +278,7 @@ export default function CompassApp() {
     setResult(null);
     setError(null);
     setTooltip(null);
+    setOpenSections(new Set(["overview"]));
   }
 
   function renderFrameworkName(name: string) {
@@ -316,17 +379,38 @@ export default function CompassApp() {
         .option.selected { border-color:var(--gold); background:var(--gold-pale); color:var(--text-main); }
         .nav-row { display:flex; justify-content:space-between; align-items:center; }
         .error-msg { background:rgba(153,27,27,0.1); border:1px solid rgba(239,68,68,0.22); border-radius:8px; padding:0.8rem 1rem; color:#fca5a5; font-size:0.83rem; margin-bottom:1.25rem; }
-        .loading-center { text-align:center; padding:2rem 0 1rem; }
-        .spinner { width:42px; height:42px; border:2px solid rgba(196,165,90,0.13); border-top-color:var(--gold); border-radius:50%; animation:spin 0.85s linear infinite; margin:0 auto 1.75rem; }
+
+        /* Loading */
+        .loading-card { text-align:center; }
+        .loading-logo-wrap { position:relative; display:flex; justify-content:center; align-items:center; width:130px; height:130px; margin:0 auto 2.25rem; }
+        .loading-ring-1 { position:absolute; inset:-22px; border-radius:50%; border:1.5px solid transparent; border-top-color:var(--gold); border-right-color:rgba(196,165,90,0.22); animation:spin 2s linear infinite; }
+        .loading-ring-2 { position:absolute; inset:-38px; border-radius:50%; border:1px solid transparent; border-top-color:rgba(196,165,90,0.14); border-left-color:rgba(196,165,90,0.06); animation:spin 3.8s linear infinite reverse; }
         @keyframes spin { to { transform:rotate(360deg); } }
-        .loading-headline { font-family:'Playfair Display',serif; font-size:1.45rem; font-weight:400; color:var(--text-main); margin-bottom:0.5rem; }
-        .loading-sub { font-size:0.83rem; color:var(--text-muted); font-weight:300; }
-        .risk-badge { display:inline-flex; align-items:center; gap:0.45rem; padding:0.28rem 0.85rem; border-radius:100px; font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.85rem; border:1px solid; }
+        .loading-headline { font-family:'Playfair Display',serif; font-size:1.45rem; font-weight:400; color:var(--text-main); margin-bottom:0.9rem; }
+        .loading-msg { font-size:0.85rem; color:var(--text-muted); font-weight:300; font-style:italic; min-height:1.4em; letter-spacing:0.01em; }
+
+        /* Results */
+        .risk-badge { display:inline-flex; align-items:center; gap:0.45rem; padding:0.28rem 0.85rem; border-radius:100px; font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.55rem; border:1px solid; }
+        .legal-disclaimer { margin:0.4rem 0 1.35rem; padding:0.55rem 0.9rem; border-left:2px solid rgba(196,165,90,0.2); font-size:0.74rem; color:var(--text-dim); font-style:italic; line-height:1.65; font-weight:300; }
         .results-headline { font-family:'Playfair Display',serif; font-size:1.9rem; font-weight:400; color:var(--text-main); line-height:1.2; }
         .results-headline em { font-style:italic; color:var(--gold-light); }
         .section-label { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--gold); font-weight:700; margin-bottom:0.8rem; }
         .summary-text { font-size:0.91rem; color:var(--text-muted); line-height:1.85; font-weight:300; }
         .divider { height:1px; background:rgba(196,165,90,0.1); margin:1.65rem 0; }
+
+        /* Accordion */
+        .accordion-sections { display:flex; flex-direction:column; gap:0.5rem; margin-top:1.5rem; }
+        .accordion-row { border:1px solid rgba(196,165,90,0.16); border-radius:10px; overflow:hidden; }
+        .accordion-header { width:100%; display:flex; justify-content:space-between; align-items:center; padding:1rem 1.25rem; background:rgba(196,165,90,0.02); border:none; cursor:pointer; transition:background 0.15s; font-family:'Inter',sans-serif; }
+        .accordion-header:hover { background:rgba(196,165,90,0.05); }
+        .accordion-label { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--gold); font-weight:700; }
+        .accordion-chevron { color:var(--gold); transition:transform 0.25s ease; flex-shrink:0; }
+        .accordion-chevron.open { transform:rotate(180deg); }
+        .accordion-body { overflow:hidden; max-height:0; transition:max-height 0.35s ease; }
+        .accordion-body.open { max-height:2000px; }
+        .accordion-body-inner { padding:0 1.25rem 1.25rem; }
+
+        /* Frameworks */
         .frameworks { display:flex; flex-direction:column; gap:0.6rem; }
         .fw-item { display:flex; align-items:flex-start; gap:0.9rem; padding:0.85rem 1rem; border-radius:10px; background:rgba(196,165,90,0.03); border:1px solid rgba(196,165,90,0.1); }
         .fw-badge { font-size:0.62rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; padding:0.18rem 0.48rem; border-radius:4px; white-space:nowrap; margin-top:3px; flex-shrink:0; }
@@ -339,7 +423,16 @@ export default function CompassApp() {
         .action-item { padding:0.9rem 1.1rem; border-radius:10px; background:rgba(196,165,90,0.03); border:1px solid rgba(196,165,90,0.09); border-left:3px solid rgba(196,165,90,0.35); }
         .item-title { font-weight:600; font-size:0.87rem; color:var(--text-main); margin-bottom:0.28rem; }
         .item-desc { font-size:0.8rem; color:var(--text-muted); line-height:1.6; font-weight:300; }
-        .juris-box { background:rgba(196,165,90,0.04); border:1px solid rgba(196,165,90,0.18); border-radius:10px; padding:1.1rem 1.2rem; font-size:0.86rem; color:var(--text-muted); line-height:1.8; font-weight:300; }
+        .sublabel { font-size:0.77rem; color:var(--text-dim); margin-bottom:0.9rem; font-style:italic; }
+
+        /* Jurisdictional note */
+        .juris-box { background:rgba(196,165,90,0.04); border:1px solid rgba(196,165,90,0.18); border-radius:10px; overflow:hidden; }
+        .juris-block { padding:0.85rem 1.1rem; }
+        .juris-jurisdiction { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold); font-weight:700; margin-bottom:0.4rem; }
+        .juris-note-text { font-size:0.86rem; color:var(--text-muted); line-height:1.8; font-weight:300; }
+        .juris-divider { height:1px; background:rgba(196,165,90,0.1); }
+
+        /* Consultant */
         .consult-box { background:linear-gradient(135deg,rgba(196,165,90,0.07),rgba(20,30,65,0.4)); border:1px solid rgba(196,165,90,0.28); border-radius:12px; padding:1.5rem 1.6rem; }
         .consult-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--text-main); margin-bottom:0.5rem; }
         .consult-body { font-size:0.83rem; color:var(--text-muted); line-height:1.75; margin-bottom:1rem; font-weight:300; }
@@ -347,20 +440,27 @@ export default function CompassApp() {
         .consult-email a { font-size:0.85rem; color:var(--gold); text-decoration:none; }
         .consult-email a:hover { text-decoration:underline; }
         .action-row { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:2rem; }
-        .sublabel { font-size:0.77rem; color:var(--text-dim); margin-bottom:0.9rem; font-style:italic; }
+
+        /* Footer */
+        .site-footer { text-align:center; margin-top:1.75rem; padding-top:1.25rem; border-top:1px solid rgba(196,165,90,0.1); font-size:0.75rem; color:var(--text-dim); }
+        .site-footer a { color:var(--text-dim); text-decoration:none; transition:color 0.15s; }
+        .site-footer a:hover { color:var(--gold); }
+
+        /* Print */
         @media print {
           body,.app { background:white !important; }
           .app { padding:0 !important; justify-content:flex-start !important; }
           .card { background:white !important; border:none !important; border-radius:0 !important; max-width:100% !important; padding:1.75rem 2.25rem !important; box-shadow:none !important; backdrop-filter:none !important; animation:none !important; }
-          .action-row,.screen-logo { display:none !important; }
+          .action-row,.screen-logo,.site-footer { display:none !important; }
           .print-header { display:flex !important; align-items:center; justify-content:space-between; padding-bottom:1.25rem; margin-bottom:1.75rem; border-bottom:2px solid #c4a55a; }
           .print-logo { height:60px !important; width:auto; }
           .print-meta { text-align:right; font-size:0.73rem; color:#555; line-height:1.7; }
           .print-meta strong { color:#0d1426; display:block; }
           .headline,.results-headline,.consult-title { color:#0d1426 !important; }
           .headline em,.results-headline em { color:#a8893f !important; }
-          .summary-text,.fw-reason,.item-desc,.consult-body,.juris-box,.sublabel { color:#374151 !important; }
-          .section-label,.q-label { color:#a8893f !important; }
+          .summary-text,.fw-reason,.item-desc,.consult-body,.sublabel { color:#374151 !important; }
+          .juris-note-text { color:#374151 !important; }
+          .section-label,.q-label,.accordion-label { color:#a8893f !important; }
           .fw-item { background:#f9f7f1 !important; border-color:#e5dcc5 !important; }
           .fw-high { background:#fef9ee !important; color:#a8893f !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
           .fw-medium { background:#f3f4f6 !important; color:#4b5563 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -368,11 +468,22 @@ export default function CompassApp() {
           .item-title,.consult-name { color:#0d1426 !important; }
           .priority-item { background:#f9f7f1 !important; border-color:#e5dcc5 !important; border-left-color:#c4a55a !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
           .action-item { background:#fafaf8 !important; border-color:#ede8d8 !important; border-left-color:#c4a55a !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-          .juris-box { background:#f9f7f1 !important; border-color:#e5dcc5 !important; color:#374151 !important; }
+          .juris-box { background:#f9f7f1 !important; border-color:#e5dcc5 !important; }
+          .juris-jurisdiction { color:#a8893f !important; }
           .consult-box { background:#f9f7f1 !important; border-color:#e5dcc5 !important; }
           .consult-email a { color:#a8893f !important; }
-          .divider { background:#e5dcc5 !important; }
+          .divider,.juris-divider { background:#e5dcc5 !important; }
           .risk-badge { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+          .legal-disclaimer { color:#6b7280 !important; border-left-color:#c4a55a !important; }
+          /* Expand all accordion sections in print */
+          .accordion-body { max-height:none !important; overflow:visible !important; }
+          .accordion-chevron { display:none !important; }
+          .accordion-header { padding:0 0 0.5rem 0 !important; background:none !important; border:none !important; border-bottom:1px solid #e5dcc5 !important; margin-bottom:0.85rem !important; pointer-events:none; }
+          .accordion-row { border:none !important; border-radius:0 !important; margin-bottom:1.75rem !important; page-break-inside:avoid !important; }
+          .accordion-sections { gap:0 !important; margin-top:1rem !important; }
+          .accordion-body-inner { padding:0 0 0.5rem 0 !important; }
+          /* Page breaks */
+          .accordion-row:nth-child(3) { page-break-before:always !important; }
         }
         .print-header { display:none; }
       `}</style>
@@ -400,6 +511,11 @@ export default function CompassApp() {
             <button className="btn-primary" onClick={() => setStep("questions")}>
               Begin Assessment
             </button>
+            <div className="site-footer">
+              <a href="/terms">Terms of Use</a>
+              {" · "}
+              <a href="/privacy">Privacy Policy</a>
+            </div>
           </div>
         )}
 
@@ -451,15 +567,18 @@ export default function CompassApp() {
         )}
 
         {step === "loading" && (
-          <div className="card">
-            <div className="logo-wrap">
-              <img src="/logo.png" alt="Compass AI" />
+          <div className="card loading-card">
+            <div className="loading-logo-wrap">
+              <div className="loading-ring-2" />
+              <div className="loading-ring-1" />
+              <img
+                src="/logo.png"
+                alt="Compass AI"
+                style={{ height: "90px", width: "auto", objectFit: "contain", position: "relative", zIndex: 1 }}
+              />
             </div>
-            <div className="loading-center">
-              <div className="spinner" />
-              <div className="loading-headline">Analyzing your governance profile</div>
-              <div className="loading-sub">Mapping jurisdictions, frameworks, and risk factors</div>
-            </div>
+            <div className="loading-headline">Analyzing your governance profile</div>
+            <div className="loading-msg">{LOADING_MESSAGES[loadingMsg]}</div>
           </div>
         )}
 
@@ -491,55 +610,84 @@ export default function CompassApp() {
               {result.riskTier} Risk Profile
             </div>
 
+            <div className="legal-disclaimer">
+              This profile is generated for informational purposes only and does not constitute legal advice. Consult a qualified attorney or compliance professional before making governance decisions.
+            </div>
+
             <div className="results-headline">Your <em>Governance</em> Profile</div>
             <div className="divider-gold" style={{ marginTop: "1rem" }} />
 
-            <div className="section-label" style={{ marginTop: "1.5rem" }}>Overview</div>
-            <p className="summary-text">{result.summary}</p>
-            <div className="divider" />
+            <div className="accordion-sections">
+              {renderAccordion("overview", "Overview",
+                <p className="summary-text">{result.summary}</p>
+              )}
 
-            <div className="section-label">Applicable Frameworks and Regulations</div>
-            <div className="frameworks">
-              {result.primaryFrameworks?.map((fw, i) => (
-                <div className="fw-item" key={i}>
-                  <span className={`fw-badge fw-${fw.relevance?.toLowerCase()}`}>{fw.relevance}</span>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: "0.25rem" }}>
-                      {renderFrameworkName(fw.name)}
+              {renderAccordion("frameworks", "Applicable Frameworks and Regulations",
+                <div className="frameworks">
+                  {result.primaryFrameworks?.map((fw, i) => (
+                    <div className="fw-item" key={i}>
+                      <span className={`fw-badge fw-${fw.relevance?.toLowerCase()}`}>{fw.relevance}</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: "0.25rem" }}>
+                          {renderFrameworkName(fw.name)}
+                        </div>
+                        <div className="fw-reason">{fw.reason}</div>
+                      </div>
                     </div>
-                    <div className="fw-reason">{fw.reason}</div>
+                  ))}
+                </div>
+              )}
+
+              {renderAccordion("priorities", "Strategic Priorities",
+                <>
+                  <p className="sublabel" style={{ marginBottom: "0.9rem" }}>Medium-term goals to build toward over the next 3 to 12 months.</p>
+                  <div className="priority-list">
+                    {result.topPriorities?.map((p, i) => (
+                      <div className="priority-item" key={i}>
+                        <div className="item-title">{p.title}</div>
+                        <div className="item-desc">{p.description}</div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="divider" />
+                </>
+              )}
 
-            <div className="section-label">Strategic Priorities</div>
-            <p className="sublabel">Medium-term goals to build toward over the next 3 to 12 months.</p>
-            <div className="priority-list">
-              {result.topPriorities?.map((p, i) => (
-                <div className="priority-item" key={i}>
-                  <div className="item-title">{p.title}</div>
-                  <div className="item-desc">{p.description}</div>
-                </div>
-              ))}
-            </div>
-            <div className="divider" />
+              {renderAccordion("actions", "Immediate Actions",
+                <>
+                  <p className="sublabel" style={{ marginBottom: "0.9rem" }}>Concrete steps you can take in the next 30 to 90 days.</p>
+                  <div className="action-list">
+                    {result.immediateActions?.map((a, i) => (
+                      <div className="action-item" key={i}>
+                        <div className="item-title">{a.title}</div>
+                        <div className="item-desc">{a.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
 
-            <div className="section-label">Immediate Actions</div>
-            <p className="sublabel">Concrete steps you can take in the next 30 to 90 days.</p>
-            <div className="action-list">
-              {result.immediateActions?.map((a, i) => (
-                <div className="action-item" key={i}>
-                  <div className="item-title">{a.title}</div>
-                  <div className="item-desc">{a.description}</div>
+              {renderAccordion("jurisdictional", "Jurisdictional Note",
+                <div className="juris-box">
+                  {Array.isArray(result.jurisdictionalNote)
+                    ? result.jurisdictionalNote.map((item, i) => (
+                        <div key={i}>
+                          {i > 0 && <div className="juris-divider" />}
+                          <div className="juris-block">
+                            <div className="juris-jurisdiction">{item.jurisdiction}</div>
+                            <div className="juris-note-text">{item.note}</div>
+                          </div>
+                        </div>
+                      ))
+                    : (
+                        <div className="juris-block">
+                          <div className="juris-note-text">{result.jurisdictionalNote as string}</div>
+                        </div>
+                      )
+                  }
                 </div>
-              ))}
+              )}
             </div>
-            <div className="divider" />
 
-            <div className="section-label">Jurisdictional Note</div>
-            <div className="juris-box">{result.jurisdictionalNote}</div>
             <div className="divider" />
 
             <div className="section-label">Work With a Consultant</div>
@@ -557,6 +705,12 @@ export default function CompassApp() {
             <div className="action-row">
               <button className="btn-primary" onClick={() => window.print()}>Save as PDF</button>
               <button className="btn-ghost" onClick={restart}>Start Over</button>
+            </div>
+
+            <div className="site-footer">
+              <a href="/terms">Terms of Use</a>
+              {" · "}
+              <a href="/privacy">Privacy Policy</a>
             </div>
           </div>
         )}

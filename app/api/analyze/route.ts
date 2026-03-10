@@ -26,8 +26,15 @@ Return ONLY valid JSON with this exact structure:
       "description": "1-2 sentences describing a concrete step they can take in the next 30 to 90 days."
     }
   ],
-  "jurisdictionalNote": "2-3 sentences explaining their specific legal obligations based on geography, sector, and data type. Be specific. Name the laws and explain what they require in plain language."
+  "jurisdictionalNote": [
+    {
+      "jurisdiction": "Jurisdiction or region name (e.g. United States, European Union, Federal - Healthcare)",
+      "note": "2-3 sentences explaining the specific legal obligations for this jurisdiction based on the organization's sector, geography, and data type. Name the specific laws and explain what they require in plain language."
+    }
+  ]
 }
+
+The jurisdictionalNote must always be an array of objects, even if only one jurisdiction applies. Each object covers one distinct jurisdiction or regulatory domain. Be specific: name the laws and explain what they require.
 
 Top priorities should be strategic and medium-term (3 to 12 months). Immediate actions should be concrete, tactical, and doable in the next 30 to 90 days. Keep all language accessible. Do not use jargon without explaining it. Only include frameworks that genuinely apply. Do not use em dashes anywhere in your response.`;
 
