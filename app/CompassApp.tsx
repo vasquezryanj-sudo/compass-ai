@@ -478,12 +478,29 @@ export default function CompassApp() {
           /* Expand all accordion sections in print */
           .accordion-body { max-height:none !important; overflow:visible !important; }
           .accordion-chevron { display:none !important; }
-          .accordion-header { padding:0 0 0.5rem 0 !important; background:none !important; border:none !important; border-bottom:1px solid #e5dcc5 !important; margin-bottom:0.85rem !important; pointer-events:none; }
-          .accordion-row { border:none !important; border-radius:0 !important; margin-bottom:1.75rem !important; page-break-inside:avoid !important; }
-          .accordion-sections { gap:0 !important; margin-top:1rem !important; }
-          .accordion-body-inner { padding:0 0 0.5rem 0 !important; }
-          /* Page breaks */
-          .accordion-row:nth-child(3) { page-break-before:always !important; }
+          .accordion-header { padding:0 0 0.5rem 0 !important; background:none !important; border:none !important; border-bottom:1px solid #e5dcc5 !important; margin-bottom:0.75rem !important; pointer-events:none; }
+          .accordion-row { border:none !important; border-radius:0 !important; margin-bottom:0 !important; break-inside:avoid !important; page-break-inside:avoid !important; }
+          .accordion-sections { gap:0 !important; margin-top:0.75rem !important; }
+          .accordion-body-inner { padding:0 0 0.25rem 0 !important; }
+          /* Each section on its own page */
+          .accordion-row + .accordion-row { break-before:page !important; page-break-before:always !important; }
+          .consult-section { break-before:page !important; page-break-before:always !important; }
+          /* Keep individual items together, never split mid-item */
+          .fw-item { break-inside:avoid !important; page-break-inside:avoid !important; }
+          .priority-item { break-inside:avoid !important; page-break-inside:avoid !important; }
+          .action-item { break-inside:avoid !important; page-break-inside:avoid !important; }
+          .juris-block { break-inside:avoid !important; page-break-inside:avoid !important; }
+          /* Condense spacing so sections fit on one page */
+          .fw-item { padding:0.5rem 0.75rem !important; }
+          .fw-reason { margin-top:0.1rem !important; line-height:1.45 !important; }
+          .frameworks { gap:0.35rem !important; }
+          .priority-item,.action-item { padding:0.6rem 0.85rem !important; }
+          .priority-list,.action-list { gap:0.35rem !important; }
+          .juris-block { padding:0.6rem 0.85rem !important; }
+          .summary-text { line-height:1.7 !important; }
+          .item-desc,.fw-reason { font-size:0.78rem !important; line-height:1.5 !important; }
+          .sublabel { margin-bottom:0.5rem !important; }
+          .consult-body { line-height:1.6 !important; margin-bottom:0.75rem !important; }
         }
         .print-header { display:none; }
       `}</style>
@@ -688,17 +705,17 @@ export default function CompassApp() {
               )}
             </div>
 
-            <div className="divider" />
-
-            <div className="section-label">Work With a Consultant</div>
-            <div className="consult-box">
-              <div className="consult-title">Take the next step with expert guidance.</div>
-              <p className="consult-body">
-                This profile gives you a clear picture of where your organization stands. Translating it into a governance program that actually protects your organization and the people you serve takes expertise. Ryan Vasquez is an AI governance consultant specializing in regulatory compliance, ethical AI frameworks, and organizational policy development. Reach out to discuss your specific situation.
-              </p>
-              <div className="consult-name">Ryan Vasquez, AI Governance Consultant</div>
-              <div className="consult-email">
-                <a href="mailto:vasquezryanj@gmail.com">vasquezryanj@gmail.com</a>
+            <div className="consult-section">
+              <div className="section-label">Work With a Consultant</div>
+              <div className="consult-box">
+                <div className="consult-title">Take the next step with expert guidance.</div>
+                <p className="consult-body">
+                  This profile gives you a clear picture of where your organization stands. Translating it into a governance program that actually protects your organization and the people you serve takes expertise. Ryan Vasquez is an AI governance consultant specializing in regulatory compliance, ethical AI frameworks, and organizational policy development. Reach out to discuss your specific situation.
+                </p>
+                <div className="consult-name">Ryan Vasquez, AI Governance Consultant</div>
+                <div className="consult-email">
+                  <a href="mailto:vasquezryanj@gmail.com">vasquezryanj@gmail.com</a>
+                </div>
               </div>
             </div>
 
