@@ -291,7 +291,7 @@ export default function CompassApp() {
         }
         @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         .logo-wrap { display:flex; justify-content:center; margin-bottom:2.5rem; }
-        .logo-wrap img { height:88px; width:auto; object-fit:contain; }
+        .logo-wrap img { height:120px; width:auto; object-fit:contain; }
         .headline { font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:400; line-height:1.2; margin-bottom:1.5rem; color:var(--text-main); }
         .headline em { font-style:italic; color:var(--gold-light); }
         .intro-body { font-size:0.93rem; color:var(--text-muted); line-height:1.85; margin-bottom:1.25rem; font-weight:300; }
@@ -406,7 +406,7 @@ export default function CompassApp() {
         {step === "questions" && (
           <div className="card">
             <div className="logo-wrap screen-logo" style={{ marginBottom: "1.5rem" }}>
-              <img src="/logo.png" alt="Compass AI" style={{ height: "58px" }} />
+              <img src="/logo.png" alt="Compass AI" style={{ height: "80px" }} />
             </div>
             <div className="progress-wrap">
               <div className="progress-meta">
@@ -477,7 +477,7 @@ export default function CompassApp() {
             </div>
 
             <div className="logo-wrap screen-logo" style={{ marginBottom: "1.5rem" }}>
-              <img src="/logo.png" alt="Compass AI" style={{ height: "64px" }} />
+              <img src="/logo.png" alt="Compass AI" style={{ height: "80px" }} />
             </div>
 
             <div
