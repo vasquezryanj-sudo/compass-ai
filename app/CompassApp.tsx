@@ -190,10 +190,10 @@ export default function CompassApp() {
     });
   }
 
-  function renderAccordion(id: string, label: string, children: ReactNode) {
+  function renderAccordion(id: string, label: string, children: ReactNode, pageBreak = false) {
     const isOpen = openSections.has(id);
     return (
-      <div className="accordion-row" key={id}>
+      <div className={`accordion-row${pageBreak ? " print-break-before" : ""}`} key={id}>
         <button className="accordion-header" onClick={() => toggleSection(id)}>
           <span className="accordion-label">{label}</span>
           <svg
@@ -482,9 +482,10 @@ export default function CompassApp() {
           .accordion-row { border:none !important; border-radius:0 !important; margin-bottom:0 !important; break-inside:avoid !important; page-break-inside:avoid !important; }
           .accordion-sections { gap:0 !important; margin-top:0.75rem !important; }
           .accordion-body-inner { padding:0 0 0.25rem 0 !important; }
-          /* Each section on its own page */
-          .accordion-row + .accordion-row { break-before:page !important; page-break-before:always !important; }
-          .consult-section { break-before:page !important; page-break-before:always !important; }
+          /* Page breaks: priorities and jurisdictional start new pages; others flow together */
+          .accordion-row.print-break-before { break-before:page !important; page-break-before:always !important; }
+          .accordion-row + .accordion-row:not(.print-break-before) { margin-top:1.75rem !important; }
+          .consult-section { margin-top:1.75rem !important; padding-top:1.25rem !important; border-top:1px solid #e5dcc5 !important; }
           /* Keep individual items together, never split mid-item */
           .fw-item { break-inside:avoid !important; page-break-inside:avoid !important; }
           .priority-item { break-inside:avoid !important; page-break-inside:avoid !important; }
@@ -616,6 +617,9 @@ export default function CompassApp() {
               <img src="/logo.png" alt="Compass AI" style={{ height: "80px" }} />
             </div>
 
+            <div className="results-headline">Your <em>Governance</em> Profile</div>
+            <div className="divider-gold" style={{ margin: "1rem 0" }} />
+
             <div
               className="risk-badge"
               style={{
@@ -630,9 +634,6 @@ export default function CompassApp() {
             <div className="legal-disclaimer">
               This profile is generated for informational purposes only and does not constitute legal advice. Consult a qualified attorney or compliance professional before making governance decisions.
             </div>
-
-            <div className="results-headline">Your <em>Governance</em> Profile</div>
-            <div className="divider-gold" style={{ marginTop: "1rem" }} />
 
             <div className="accordion-sections">
               {renderAccordion("overview", "Overview",
@@ -666,7 +667,8 @@ export default function CompassApp() {
                       </div>
                     ))}
                   </div>
-                </>
+                </>,
+                true
               )}
 
               {renderAccordion("actions", "Immediate Actions",
@@ -701,11 +703,13 @@ export default function CompassApp() {
                         </div>
                       )
                   }
-                </div>
+                </div>,
+                true
               )}
             </div>
 
             <div className="consult-section">
+              <div className="section-label">Consult with Compass</div>
               <div className="consult-box">
                 <div className="consult-title">Take the next step with expert guidance.</div>
                 <p className="consult-body">
