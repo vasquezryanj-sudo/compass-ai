@@ -706,7 +706,6 @@ export default function CompassApp() {
             </div>
 
             <div className="consult-section">
-              <div className="section-label">Work With a Consultant</div>
               <div className="consult-box">
                 <div className="consult-title">Take the next step with expert guidance.</div>
                 <p className="consult-body">
